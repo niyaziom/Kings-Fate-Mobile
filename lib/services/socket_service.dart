@@ -65,7 +65,14 @@ class SocketService {
 
   // Event emitters
   void createRoom(String playerName) {
-    print('📤 Emitting createRoom: $playerName');
+    if (_socket == null) {
+      print('❌ Cannot create room: Socket is null');
+      return;
+    }
+    if (!_isConnected) {
+      print('⚠️ Warning: Socket not connected yet, attempting to emit anyway');
+    }
+    print('📤 Emitting createRoom: $playerName (Connected: $_isConnected, Socket ID: ${_socket?.id})');
     _socket?.emit('createRoom', {'playerName': playerName});
   }
 

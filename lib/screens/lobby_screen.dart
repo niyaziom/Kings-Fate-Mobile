@@ -433,7 +433,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 ],
               ),
             );
-          }),
+          }).toList(),
           const SizedBox(height: 24),
           if (isHost)
             SizedBox(

@@ -12,10 +12,20 @@ class PlayerModel {
   });
 
   factory PlayerModel.fromJson(Map<String, dynamic> json) {
+    // Handle cardCount - server might send 'hand' array or 'cardCount' number
+    int cardCount;
+    if (json.containsKey('cardCount') && json['cardCount'] != null) {
+      cardCount = json['cardCount'] as int;
+    } else if (json.containsKey('hand') && json['hand'] != null) {
+      cardCount = (json['hand'] as List).length;
+    } else {
+      cardCount = 0;
+    }
+
     return PlayerModel(
       id: json['id'] as String,
       name: json['name'] as String,
-      cardCount: json['cardCount'] as int,
+      cardCount: cardCount,
       hasStagingCard: json['hasStagingCard'] as bool? ?? false,
     );
   }

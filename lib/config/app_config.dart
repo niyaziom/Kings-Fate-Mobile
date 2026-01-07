@@ -1,7 +1,7 @@
 class AppConfig {
   // IMPORTANT: Update this with your deployed server URL
   // For production (after deploying to Railway/Heroku):
-  static const String serverUrl = 'https://web-production-703bf.up.railway.app/';
+  static const String serverUrl = 'https://web-production-703bf.up.railway.app';
   
   // For local testing:
   // Android emulator: use 10.0.2.2 instead of localhost
