@@ -61,21 +61,49 @@ class GameProvider with ChangeNotifier {
     // Game started
     _socketService.on('gameStarted', (data) {
       print('📥 Received gameStarted: $data');
-      final hand = (data['yourHand'] as List)
-          .map((c) => CardModel.fromJson(c as Map<String, dynamic>))
-          .toList();
-      final players = (data['players'] as List)
-          .map((p) => PlayerModel.fromJson(p as Map<String, dynamic>))
-          .toList();
+      print('🎴 Raw yourHand data: ${data['yourHand']}');
+      print('👥 Raw players data: ${data['players']}');
       
-      _gameState = _gameState.copyWith(
-        yourHand: hand,
-        players: players,
-        currentTurn: data['currentTurn'] as int,
-        discardedCount: data['discardedCount'] as int,
-      );
-      _currentScreen = AppScreen.game;
-      notifyListeners();
+      try {
+        final hand = (data['yourHand'] as List)
+            .map((c) {
+              print('🃏 Parsing card: $c');
+              return CardModel.fromJson(c as Map<String, dynamic>);
+            })
+            .toList();
+        
+        print('✅ Parsed ${hand.length} cards for your hand');
+        for (var card in hand) {
+          print('   - ${card.rank}${card.suit}');
+        }
+        
+        final players = (data['players'] as List)
+            .map((p) => PlayerModel.fromJson(p as Map<String, dynamic>))
+            .toList();
+        
+        print('✅ Parsed ${players.length} players');
+        for (var player in players) {
+          print('   - ${player.name}: ${player.cardCount} cards');
+        }
+        
+        _gameState = _gameState.copyWith(
+          yourHand: hand,
+          players: players,
+          currentTurn: data['currentTurn'] as int,
+          discardedCount: data['discardedCount'] as int,
+        );
+        
+        print('🎮 Switching to game screen');
+        print('🎮 Game state: ${hand.length} cards in hand, turn: ${data['currentTurn']}');
+        
+        _currentScreen = AppScreen.game;
+        notifyListeners();
+      } catch (e, stackTrace) {
+        print('❌ Error parsing gameStarted data: $e');
+        print('Stack trace: $stackTrace');
+        _errorMessage = 'Failed to start game: $e';
+        notifyListeners();
+      }
     });
 
     // Game update

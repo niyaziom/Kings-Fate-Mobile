@@ -19,6 +19,13 @@ class GameScreen extends StatelessWidget {
         );
         final isMyTurn = gameState.currentTurn == myPlayerIndex;
 
+        print('🎮 GameScreen building...');
+        print('   - Your hand: ${gameState.yourHand.length} cards');
+        print('   - Players: ${gameState.players.length}');
+        print('   - Current turn: ${gameState.currentTurn}');
+        print('   - My index: $myPlayerIndex');
+        print('   - Is my turn: $isMyTurn');
+
         if (gameOver != null) {
           return _buildGameOver(context, gameProvider, gameOver, myPlayerIndex);
         }
@@ -259,12 +266,25 @@ class GameScreen extends StatelessWidget {
                   flex: 2,
                   child: gameState.yourHand.isEmpty
                       ? Center(
-                          child: Text(
-                            'No cards',
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              color: Colors.white54,
-                            ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'No cards in hand',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  color: Colors.white54,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'DEBUG: ${gameState.players.length} players',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: Colors.amber,
+                                ),
+                              ),
+                            ],
                           ),
                         )
                       : SingleChildScrollView(
