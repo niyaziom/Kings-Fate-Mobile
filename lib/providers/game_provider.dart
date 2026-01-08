@@ -50,12 +50,24 @@ class GameProvider with ChangeNotifier {
     // Player joined
     _socketService.on('playerJoined', (data) {
       print('📥 Received playerJoined: $data');
-      final players = (data['players'] as List)
-          .map((p) => PlayerModel.fromJson(p as Map<String, dynamic>))
-          .toList();
+      print('👥 Raw players data: ${data['players']}');
       
-      _gameState = _gameState.copyWith(players: players);
-      notifyListeners();
+      try {
+        final players = (data['players'] as List)
+            .map((p) => PlayerModel.fromJson(p as Map<String, dynamic>))
+            .toList();
+        
+        print('✅ Parsed ${players.length} players after join');
+        for (var player in players) {
+          print('   - ${player.name} (ID: ${player.id})');
+        }
+        
+        _gameState = _gameState.copyWith(players: players);
+        notifyListeners();
+      } catch (e, stackTrace) {
+        print('❌ Error parsing playerJoined data: $e');
+        print('Stack trace: $stackTrace');
+      }
     });
 
     // Game started
@@ -216,15 +228,18 @@ class GameProvider with ChangeNotifier {
   }
 
   void joinRoom(String roomCode, String name) {
+    print('🚪 Attempting to join room: $roomCode as $name');
     _playerName = name;
     _isLoading = true;
     notifyListeners();
     
+    print('📡 Emitting joinRoom event to server');
     _socketService.joinRoom(roomCode, name);
     
     Future.delayed(const Duration(seconds: 2), () {
       _isLoading = false;
       notifyListeners();
+      print('⏱️ Join room timeout - checking if joined successfully');
     });
   }
 

@@ -23,11 +23,13 @@ class SocketService {
     _socket = IO.io(
       AppConfig.serverUrl,
       IO.OptionBuilder()
-          .setTransports(['websocket', 'polling'])
+          .setTransports(['websocket']) // Force WebSocket only to prevent transport upgrade disconnection
           .disableAutoConnect()
           .enableReconnection()
-          .setReconnectionAttempts(5)
+          .setReconnectionAttempts(10)
           .setReconnectionDelay(1000)
+          .setReconnectionDelayMax(5000)
+          .setTimeout(20000)
           .build(),
     );
 
@@ -38,8 +40,8 @@ class SocketService {
       _isConnected = true;
     });
 
-    _socket!.onDisconnect((_) {
-      print('❌ Disconnected from server');
+    _socket!.onDisconnect((reason) {
+      print('❌ Disconnected from server. Reason: $reason');
       _isConnected = false;
     });
 
@@ -50,6 +52,14 @@ class SocketService {
 
     _socket!.onError((error) {
       print('🔴 Socket error: $error');
+    });
+    
+    _socket!.onReconnect((attempt) {
+      print('🔄 Reconnected to server (attempt $attempt)');
+    });
+    
+    _socket!.onReconnectAttempt((attempt) {
+      print('🔄 Attempting to reconnect (attempt $attempt)');
     });
   }
 
@@ -77,7 +87,15 @@ class SocketService {
   }
 
   void joinRoom(String roomCode, String playerName) {
-    print('📤 Emitting joinRoom: $roomCode, $playerName');
+    if (_socket == null) {
+      print('❌ Cannot join room: Socket is null');
+      return;
+    }
+    if (!_isConnected) {
+      print('❌ Cannot join room: Not connected to server');
+      return;
+    }
+    print('📤 Emitting joinRoom: $roomCode, $playerName (Socket ID: ${_socket?.id})');
     _socket?.emit('joinRoom', {
       'roomCode': roomCode,
       'playerName': playerName,
@@ -85,6 +103,10 @@ class SocketService {
   }
 
   void startGame(String roomCode) {
+    if (!_isConnected) {
+      print('❌ Cannot start game: Not connected to server');
+      return;
+    }
     print('📤 Emitting startGame: $roomCode');
     _socket?.emit('startGame', {'roomCode': roomCode});
   }
