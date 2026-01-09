@@ -63,6 +63,13 @@ class GameProvider with ChangeNotifier {
         }
         
         _gameState = _gameState.copyWith(players: players);
+        
+        // If we're not already in the lobby, switch to it (for joining player)
+        if (_currentScreen != AppScreen.lobby && _gameState.roomCode != null) {
+          print('🚪 Switching to lobby screen');
+          _currentScreen = AppScreen.lobby;
+        }
+        
         notifyListeners();
       } catch (e, stackTrace) {
         print('❌ Error parsing playerJoined data: $e');
@@ -231,6 +238,13 @@ class GameProvider with ChangeNotifier {
     print('🚪 Attempting to join room: $roomCode as $name');
     _playerName = name;
     _isLoading = true;
+    
+    // Store the roomCode before emitting - will be confirmed when playerJoined is received
+    _gameState = _gameState.copyWith(
+      roomCode: roomCode,
+      isHost: false,
+    );
+    
     notifyListeners();
     
     print('📡 Emitting joinRoom event to server');
