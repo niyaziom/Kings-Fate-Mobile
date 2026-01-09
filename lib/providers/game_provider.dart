@@ -16,6 +16,10 @@ class GameProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   
+  // Match splash state
+  bool _showMatchSplash = false;
+  List<CardModel>? _discardedPair;
+  
   // Getters
   AppScreen get currentScreen => _currentScreen;
   GameState get gameState => _gameState;
@@ -24,6 +28,8 @@ class GameProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isConnected => _socketService.isConnected;
+  bool get showMatchSplash => _showMatchSplash;
+  List<CardModel>? get discardedPair => _discardedPair;
 
   void initialize() {
     _socketService.connect();
@@ -154,6 +160,24 @@ class GameProvider with ChangeNotifier {
     // Match success
     _socketService.on('matchSuccess', (data) {
       print('📥 Received matchSuccess: $data');
+      print('✨ Match! Showing splash effect');
+      
+      // Parse discarded cards for splash display
+      if (data['discardedCards'] != null) {
+        _discardedPair = (data['discardedCards'] as List)
+            .map((c) => CardModel.fromJson(c as Map<String, dynamic>))
+            .toList();
+        _showMatchSplash = true;
+        notifyListeners();
+        
+        // Hide splash after 2 seconds
+        Future.delayed(const Duration(seconds: 2), () {
+          _showMatchSplash = false;
+          _discardedPair = null;
+          notifyListeners();
+        });
+      }
+      
       final hand = (data['yourHand'] as List)
           .map((c) => CardModel.fromJson(c as Map<String, dynamic>))
           .toList();

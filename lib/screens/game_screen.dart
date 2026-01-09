@@ -31,27 +31,35 @@ class GameScreen extends StatelessWidget {
         }
 
         return Scaffold(
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.purple.shade900,
-                  Colors.blue.shade900,
-                ],
-              ),
-            ),
-            child: SafeArea(
-              child: Column(
-                children: [
-                  _buildHeader(context, gameState, isMyTurn),
-                  Expanded(
-                    child: _buildGameBoard(context, gameProvider, gameState, myPlayerIndex, isMyTurn),
+          body: Stack(
+            children: [
+              // Main game content
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.purple.shade900,
+                      Colors.blue.shade900,
+                    ],
                   ),
-                ],
+                ),
+                child: SafeArea(
+                  child: Column(
+                    children: [
+                      _buildHeader(context, gameState, isMyTurn),
+                      Expanded(
+                        child: _buildGameBoard(context, gameProvider, gameState, myPlayerIndex, isMyTurn),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+              // Match splash overlay
+              if (gameProvider.showMatchSplash && gameProvider.discardedPair != null)
+                _buildMatchSplash(context, gameProvider.discardedPair!),
+            ],
           ),
         );
       },
@@ -449,6 +457,54 @@ class GameScreen extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMatchSplash(BuildContext context, List<CardModel> discardedPair) {
+    return Container(
+      color: Colors.black.withOpacity(0.7),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '🎉 MATCH! 🎉',
+              style: GoogleFonts.cinzel(
+                fontSize: 36,
+                fontWeight: FontWeight.bold,
+                color: Colors.amber,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (discardedPair.isNotEmpty)
+                  Container(
+                    width: 100,
+                    height: 140,
+                    child: CardWidget(card: discardedPair[0]),
+                  ),
+                const SizedBox(width: 16),
+                if (discardedPair.length > 1)
+                  Container(
+                    width: 100,
+                    height: 140,
+                    child: CardWidget(card: discardedPair[1]),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Cards Discarded!',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                color: Colors.white70,
+              ),
+            ),
+          ],
         ),
       ),
     );
