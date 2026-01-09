@@ -379,7 +379,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          ...players.asMap().entries.map((entry) {
+          ...players.asMap().entries.map<Widget>((entry) {
             final index = entry.key;
             final player = entry.value;
             return Container(
