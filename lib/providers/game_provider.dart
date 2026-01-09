@@ -163,19 +163,28 @@ class GameProvider with ChangeNotifier {
       print('✨ Match! Showing splash effect');
       
       // Parse discarded cards for splash display
+      print('🔍 discardedCards in data: ${data['discardedCards']}');
+      print('🔍 discardedCards is null: ${data['discardedCards'] == null}');
+      
       if (data['discardedCards'] != null) {
+        print('✅ discardedCards found, parsing...');
         _discardedPair = (data['discardedCards'] as List)
             .map((c) => CardModel.fromJson(c as Map<String, dynamic>))
             .toList();
+        print('✅ Parsed ${_discardedPair?.length} cards for splash');
         _showMatchSplash = true;
+        print('🎉 Showing splash overlay!');
         notifyListeners();
         
         // Hide splash after 2 seconds
         Future.delayed(const Duration(seconds: 2), () {
+          print('⏱️ Hiding splash overlay');
           _showMatchSplash = false;
           _discardedPair = null;
           notifyListeners();
         });
+      } else {
+        print('⚠️ No discardedCards in matchSuccess data!');
       }
       
       final hand = (data['yourHand'] as List)
