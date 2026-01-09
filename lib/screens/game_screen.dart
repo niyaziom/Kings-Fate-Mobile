@@ -210,17 +210,24 @@ class GameScreen extends StatelessWidget {
                     player.cardCount > 5 ? 5 : player.cardCount,
                     (cardIndex) => Positioned(
                       left: cardIndex * 30.0,
-                      child: GestureDetector(
-                        onTap: () {
-                          print('👆 Tapped opponent card - playerIndex: $playerIndex, cardIndex: $cardIndex');
-                          print('   isMyTurn: $isMyTurn, hasStagingCard: ${gameState.yourStagingCard != null}');
-                          if (isMyTurn && gameState.yourStagingCard == null) {
-                            print('✅ Drawing card to staging');
-                            gameProvider.drawCardToStaging(playerIndex, cardIndex);
-                          } else {
-                            print('❌ Cannot draw: isMyTurn=$isMyTurn, hasStagingCard=${gameState.yourStagingCard != null}');
-                          }
-                        },
+                      child: Draggable<Map<String, dynamic>>(
+                        data: {'playerIndex': playerIndex, 'cardIndex': cardIndex},
+                        feedback: Material(
+                          color: Colors.transparent,
+                          child: Container(
+                            width: 70,
+                            height: 90,
+                            child: const CardBack(),
+                          ),
+                        ),
+                        childWhenDragging: Opacity(
+                          opacity: 0.3,
+                          child: Container(
+                            width: 60,
+                            height: 80,
+                            child: const CardBack(),
+                          ),
+                        ),
                         child: Container(
                           width: 60,
                           height: 80,
@@ -310,10 +317,24 @@ class GameScreen extends StatelessWidget {
                               final card = entry.value;
                               return Padding(
                                 padding: const EdgeInsets.only(right: 8),
-                                child: GestureDetector(
-                                  onTap: isMyTurn && gameState.yourStagingCard != null
-                                      ? () => gameProvider.matchCards(index)
-                                      : null,
+                                child: Draggable<Map<String, dynamic>>(
+                                  data: {'type': 'handCard', 'index': index, 'card': card},
+                                  feedback: Material(
+                                    color: Colors.transparent,
+                                    child: Container(
+                                      width: 110,
+                                      height: 150,
+                                      child: CardWidget(card: card),
+                                    ),
+                                  ),
+                                  childWhenDragging: Opacity(
+                                    opacity: 0.3,
+                                    child: Container(
+                                      width: 100,
+                                      height: 140,
+                                      child: CardWidget(card: card),
+                                    ),
+                                  ),
                                   child: Container(
                                     width: 100,
                                     height: 140,
@@ -325,59 +346,95 @@ class GameScreen extends StatelessWidget {
                           ),
                         ),
                 ),
-                // Staging area
+                // Staging area - DragTarget for opponent cards and hand cards
                 Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.only(left: 16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: gameState.yourStagingCard != null
-                            ? Colors.amber
-                            : Colors.white.withOpacity(0.2),
-                        width: 2,
-                      ),
-                    ),
-                    child: gameState.yourStagingCard != null
-                        ? Column(
-                            children: [
-                              Expanded(
-                                child: CardWidget(card: gameState.yourStagingCard!),
-                              ),
-                              const SizedBox(height: 8),
-                              if (isMyTurn)
-                                ElevatedButton(
-                                  onPressed: () => gameProvider.keepCard(),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.amber,
-                                    foregroundColor: Colors.black,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 8,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    'Keep',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          )
-                        : Center(
-                            child: Text(
-                              isMyTurn ? 'Draw a card' : 'Waiting...',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                color: Colors.white54,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
+                  child: DragTarget<Map<String, dynamic>>(
+                    onWillAcceptWithDetails: (details) {
+                      final data = details.data;
+                      // Accept opponent cards only if no staging card
+                      if (data['type'] == null && isMyTurn && gameState.yourStagingCard == null) {
+                        return true;
+                      }
+                      // Accept hand cards only if there is a staging card (for matching)
+                      if (data['type'] == 'handCard' && isMyTurn && gameState.yourStagingCard != null) {
+                        return true;
+                      }
+                      return false;
+                    },
+                    onAcceptWithDetails: (details) {
+                      final data = details.data;
+                      if (data['type'] == 'handCard') {
+                        // Match hand card with staging card
+                        final index = data['index'] as int;
+                        print('🎯 Matching hand card: index=$index');
+                        gameProvider.matchCards(index);
+                      } else {
+                        // Draw opponent card to staging
+                        print('🎯 Dropped card: playerIndex=${data['playerIndex']}, cardIndex=${data['cardIndex']}');
+                        gameProvider.drawCardToStaging(data['playerIndex'] as int, data['cardIndex'] as int);
+                      }
+                    },
+                    builder: (context, candidateData, rejectedData) {
+                      final isHovering = candidateData.isNotEmpty;
+                      return Container(
+                        margin: const EdgeInsets.only(left: 16),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: isHovering 
+                              ? Colors.amber.withOpacity(0.3) 
+                              : Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isHovering
+                                ? Colors.amber
+                                : gameState.yourStagingCard != null
+                                    ? Colors.amber
+                                    : Colors.white.withOpacity(0.2),
+                            width: 2,
                           ),
+                        ),
+                        child: gameState.yourStagingCard != null
+                            ? Column(
+                                children: [
+                                  Expanded(
+                                    child: CardWidget(card: gameState.yourStagingCard!),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  if (isMyTurn)
+                                    ElevatedButton(
+                                      onPressed: () => gameProvider.keepCard(),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.amber,
+                                        foregroundColor: Colors.black,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 8,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        'Keep',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              )
+                            : Center(
+                                child: Text(
+                                  isMyTurn 
+                                      ? (isHovering ? 'Drop here!' : 'Drag a card here')
+                                      : 'Waiting...',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    color: isHovering ? Colors.amber : Colors.white54,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                      );
+                    },
                   ),
                 ),
               ],
