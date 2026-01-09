@@ -203,9 +203,16 @@ class GameScreen extends StatelessWidget {
                     (cardIndex) => Positioned(
                       left: cardIndex * 30.0,
                       child: GestureDetector(
-                        onTap: isMyTurn && gameState.yourStagingCard == null
-                            ? () => gameProvider.drawCardToStaging(playerIndex, cardIndex)
-                            : null,
+                        onTap: () {
+                          print('👆 Tapped opponent card - playerIndex: $playerIndex, cardIndex: $cardIndex');
+                          print('   isMyTurn: $isMyTurn, hasStagingCard: ${gameState.yourStagingCard != null}');
+                          if (isMyTurn && gameState.yourStagingCard == null) {
+                            print('✅ Drawing card to staging');
+                            gameProvider.drawCardToStaging(playerIndex, cardIndex);
+                          } else {
+                            print('❌ Cannot draw: isMyTurn=$isMyTurn, hasStagingCard=${gameState.yourStagingCard != null}');
+                          }
+                        },
                         child: Container(
                           width: 60,
                           height: 80,
@@ -290,7 +297,7 @@ class GameScreen extends StatelessWidget {
                       : SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
-                            children: gameState.yourHand.asMap().entries.map((entry) {
+                            children: gameState.yourHand.asMap().entries.map<Widget>((entry) {
                               final index = entry.key;
                               final card = entry.value;
                               return Padding(
